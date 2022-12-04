@@ -1,8 +1,9 @@
 import os
 import pgdb
+import json
 import datetime
 import uuid
-from flask import Flask, jsonify, request, Response
+from flask import Flask, jsonify, request, Response, make_response
 
 app = Flask(__name__)
 
@@ -22,7 +23,6 @@ def reservations_status():
 @app.route("/reservations/", methods=['GET', 'POST'])
 def reservations_general():
     #open DB Connection and get cursor
-    #conn = pgdb.connect(host="postgres", port = 5432, database="reservations", user="postgres", password="postgres")
     conn = pgdb.connect(host=os.getenv('POSTGRES_RESERVATIONS_HOST'), port=os.getenv('POSTGRES_RESERVATIONS_PORT'), database=os.getenv('POSTGRES_RESERVATIONS_DBNAME'), user=os.getenv('POSTGRES_RESERVATIONS_USER'), password=os.getenv('POSTGRES_RESERVATIONS_PASSWORD'))
     cur = conn.cursor()
     #POST Request
@@ -30,7 +30,6 @@ def reservations_general():
         #get Values from Message Body
         content = request.json
         #initialize variables
-        sqlStatement = ''
         param_id = ""
         input_id = ""
         input_from = content['from']
@@ -81,11 +80,37 @@ def reservations_general():
         return jsonify(query_results)
     
         
-@app.route("/reservations/<string>", methods=['GET'])
-def reservations_byID(string: str): 
-    return jsonify(
-        response=string
-    )
+@app.route("/reservations/<input_id>", methods=['GET', 'PUT', 'DELETE'])
+def reservations_byID(input_id: str): 
+    #open DB Connection and get cursor
+    conn = pgdb.connect(host=os.getenv('POSTGRES_RESERVATIONS_HOST'), port=os.getenv('POSTGRES_RESERVATIONS_PORT'), database=os.getenv('POSTGRES_RESERVATIONS_DBNAME'), user=os.getenv('POSTGRES_RESERVATIONS_USER'), password=os.getenv('POSTGRES_RESERVATIONS_PASSWORD'))
+    cur = conn.cursor()
+    #GET Request
+    if request.method == 'GET':
+        #validate id
+        try:
+            uuid.UUID(input_id)
+        except ValueError:
+            return Response(status=400, mimetype='application/json')
+        #create sql statement
+        sqlStatement = "SELECT * FROM reservations WHERE id = '"+ input_id +"'"
+        #execute SQL-Statement, save query result
+        cur.execute(sqlStatement)
+        query_result = cur.fetchall()
+        #check if a reservation was found, exception if not
+        if cur.rowcount is 0:
+            return Response(status=404, mimetype='application/json')
+        #convert data to json object
+        data ={}
+        for i in range(len(cur.description)):
+            data[cur.description[i][0]] = str(query_result[0][i])
+        query_results_json = json.dumps(data)
+        #close cursor and close DB onnection
+        cur.close()
+        conn.close()  
+        #return query values
+        return Response(query_results_json, status=200, mimetype='application/json')
+    
 
 
 if __name__ == '__main__':
