@@ -1,19 +1,33 @@
 import os
-import pgdb
 import json
 import datetime
 import uuid
 from flask import Flask, jsonify, request, Response, make_response
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects.postgresql import UUID
 
+#create flask app and configure
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://'+os.getenv('POSTGRES_RESERVATIONS_USER')+':'+os.getenv('POSTGRES_RESERVATIONS_PASSWORD')+'@'+os.getenv('POSTGRES_RESERVATIONS_HOST')+':'+os.getenv('POSTGRES_RESERVATIONS_PORT')+'/'+os.getenv('POSTGRES_RESERVATIONS_DBNAME')+''
+db = SQLAlchemy(app)
 
-#load postgres parameter
-pgdb_res_host = os.getenv('POSTGRES_RESERVATIONS_HOST')
-pgdb_res_port = os.getenv('POSTGRES_RESERVATIONS_PORT')
-pgdb_res_database = os.getenv('POSTGRES_RESERVATIONS_DBNAME')
-pgdb_res_user = os.getenv('POSTGRES_RESERVATIONS_USER')
-pgdb_res_password = os.getenv('POSTGRES_RESERVATIONS_PASSWORD')
+#create model class with database scheme
+class reservations(db.Model):
+    reservation_id = db.Column("id", UUID(as_uuid=True), primary_key = True, default=uuid.uuid4)
+    from_date = db.Column("from", db.String(50))
+    to_date = db.Column("to", db.String(50))  
+    room_id = db.Column("room_id", UUID(as_uuid=True), default=uuid.uuid4)
 
+#init class to map parameters to 
+def __init__(self, reservation_id, from_date, to_date, room_id):
+    self.reservation_id = reservation_id
+    self.from_date = from_date
+    self.to_date = to_date
+    self.room_id = room_id
+
+#create the database connector
+with app.app_context():
+    db.create_all()
 
 #function to check JSON parameters
 def checkJSONValues(content):
@@ -59,9 +73,7 @@ def reservations_status():
 
 @app.route("/reservations/", methods=['GET', 'POST'])
 def reservations_general():
-    #open DB Connection and get cursor
-    conn = pgdb.connect(host=pgdb_res_host, port=pgdb_res_port, database=pgdb_res_database, user=pgdb_res_user, password=pgdb_res_password)
-    cur = conn.cursor()
+    
     #POST Request
     if request.method == 'POST':
         #get Values from Message Body
@@ -69,103 +81,75 @@ def reservations_general():
         #validate JSON-Content values
         if checkJSONValues(content) is False:
             return jsonify("invalid values")
-        #initialize variables for special case id
-        param_id = ''
-        sql_id_value = ''
-        #check if id key is present, set values to modify string
+        #check if id key is present
         if content.get('id') is not None:
-            param_id = "id, "
-            sql_id_value = content['id'] + "', '"       
-        #create SQL statement
-        sqlStatement = "INSERT INTO "+ pgdb_res_database +" ("+ param_id +"\"from\", \"to\", room_id) VALUES ('"+ sql_id_value +""+ content['from'] +"', '"+ content['to'] +"', '"+ content['room_id'] +"')"
-        #execute SQL-Statement, make new Database entry
-        cur.execute(sqlStatement)
+            db.session.add(reservations(reservation_id = content['id'], from_date = content['from'], to_date = content['to'], room_id = content['room_id']))
+        else:
+            db.session.add(reservations(from_date = content['from'], to_date = content['to'], room_id = content['room_id']))
+        #commit
+        db.session.commit()
         #create response
-        method_response = Response(status=201, mimetype='application/json')
-    
+        method_response = Response("reservation created", status=201, mimetype='application/json')
+        
     #GET Request
     else:
-        cur.execute("SELECT * FROM "+ pgdb_res_database +"")
-        query_results = cur.fetchall()
-        method_response = query_results
+        method_response = Response(status=202, mimetype='application/json')
 
-    #close cursor, commit the SQL-Statement and close DB onnection
-    cur.close()
-    conn.commit()
-    conn.close() 
-    #return response
     return method_response
+        
         
 @app.route("/reservations/<input_id>", methods=['GET', 'PUT', 'DELETE'])
 def reservations_byID(input_id: str): 
-    #open DB Connection and get cursor
-    conn = pgdb.connect(host=pgdb_res_host, port=pgdb_res_port, database=pgdb_res_database, user=pgdb_res_user, password=pgdb_res_password)
-    cur = conn.cursor()
     #validate id
     try:
         uuid.UUID(input_id)
     except ValueError:
         return Response(status=400, mimetype='application/json')
-        
+    #make query for id
+    res_query = reservations.query.filter_by(reservation_id=input_id).first()
+
     #GET request
     if request.method == 'GET':
-        #create sql statement
-        sqlStatement = "SELECT * FROM "+ pgdb_res_database +" WHERE id = '"+ input_id +"'"
-        #execute SQL-Statement, save query result
-        cur.execute(sqlStatement)
-        query_result = cur.fetchall()
-        #check if a reservation was found, exception if not
-        if cur.rowcount == 0:
-            method_response = Response(status=404, mimetype='application/json')
+        if res_query is None:
+            method_response = Response("reservation not found", status=404, mimetype='application/json')
         else:
-            #convert data to json object
+            #convert query data to json object
             data ={}
-            for i in range(len(cur.description)):
-                data[cur.description[i][0]] = str(query_result[0][i])
-            query_results_json = json.dumps(data)
+            data['id'] = str(res_query.reservation_id)
+            data['from'] = str(res_query.from_date)
+            data['to'] = str(res_query.to_date)
+            data['room_id'] = str(res_query.room_id)
+            query_result_json = json.dumps(data)
             #create response with query values
-            method_response = Response(query_results_json, status=200, mimetype='application/json')
-    
+            method_response = Response(query_result_json, status=200, mimetype='application/json')
+
     #PUT request
     elif request.method == 'PUT':
         #get Values from Message Body
         content = request.json
         #validate JSON-Content values
         if checkJSONValues(content) is False:
-            return jsonify("invalid values")
-        #check if id already in use
-        sqlStatement = "SELECT * FROM "+ pgdb_res_database +" WHERE id = '"+ input_id +"'"
-        cur.execute(sqlStatement)
-        if cur.rowcount == 0:
-            #create SQL statement
-            sqlStatement = "INSERT INTO "+ pgdb_res_database +" (id, \"from\", \"to\", room_id) VALUES ('"+ input_id +"', '"+ content['from'] +"', '"+ content['to'] +"', '"+ content['room_id'] +"')"
-            #execute SQL-Statement to make new Database entry, commit change
-            cur.execute(sqlStatement)
-            method_response = Response(status=204, mimetype='application/json')
+            return Response("invalid parameters in JSON Body", status=405, mimetype='application/json')
+        if res_query is None:
+            #insert new entry
+            db.session.add(reservations(reservation_id = input_id, from_date = content['from'], to_date = content['to'], room_id = content['room_id']))     
         else:
-            #create SQL statement
-            sqlStatement = "UPDATE "+ pgdb_res_database +" SET \"from\" =  '"+ content['from'] +"', \"to\" = '"+ content['to'] +"', room_id = '"+ content['room_id'] +"' WHERE id = '"+ input_id +"'"
-            #execute SQL-Statement to make new Database entry, commit change
-            cur.execute(sqlStatement)
-            method_response = Response(status=204, mimetype='application/json')
-
+            #update existing entry
+            reservations.query.filter_by(reservation_id=input_id).update(dict(from_date=content['from'], to_date = content['to'], room_id = content['room_id']))
+        #return response
+        method_response = Response("reservation created/updated", status=204, mimetype='application/json') 
+        
     #DELETE request
     else:
-        #create sql statement
-        sqlStatement = "DELETE FROM "+ pgdb_res_database +" WHERE id = '"+ input_id +"'"
-        #execute SQL-Statement
-        cur.execute(sqlStatement)
-        #if no entry was found: throw exception
-        if cur.rowcount == 0:
-            method_response = Response(status=404, mimetype='application/json')
+        num_deleted = reservations.query.filter_by(reservation_id=input_id).delete()
+        #check if object was deleted
+        if num_deleted > 0 :
+            method_response = Response("reservation deleted", status=204, mimetype='application/json') 
         else:
-            #create response
-            method_response = Response(status=200, mimetype='application/json')
+            method_response = Response("reservation not found", status=404, mimetype='application/json')
 
-    #close cursor, commit and close DB onnection
-    cur.close()
-    conn.commit()
-    conn.close()
+    #commit changes
+    db.session.commit()
     #return individual response
     return method_response
 
