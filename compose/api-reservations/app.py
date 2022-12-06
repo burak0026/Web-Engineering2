@@ -2,6 +2,7 @@ import os
 import json
 import datetime
 import uuid
+import requests
 from flask import Flask, jsonify, request, Response, make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import UUID
