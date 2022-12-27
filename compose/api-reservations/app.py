@@ -6,6 +6,7 @@ import requests
 from flask import Flask, jsonify, request, Response, make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import and_, or_, not_
 
 #create flask app and configure
 app = Flask(__name__)
@@ -75,13 +76,14 @@ def reservations_status():
 @app.route("/reservations/", methods=['GET', 'POST'])
 def reservations_general():
     
+    #get Values from Message Body
+    content = request.json
+    #validate JSON-Content values
+    if checkJSONValues(content) is False:
+        return jsonify("invalid values")
+
     #POST Request
     if request.method == 'POST':
-        #get Values from Message Body
-        content = request.json
-        #validate JSON-Content values
-        if checkJSONValues(content) is False:
-            return jsonify("invalid values")
         #check if id key is present
         if content.get('id') is not None:
             db.session.add(reservations(reservation_id = content['id'], from_date = content['from'], to_date = content['to'], room_id = content['room_id']))
@@ -94,7 +96,24 @@ def reservations_general():
         
     #GET Request
     else:
-        method_response = Response(status=202, mimetype='application/json')
+
+    
+        res_query = db.session.query(reservations).filter(
+            and_(reservations.from_date < content['before'], reservations.to_date > content['after']))
+        
+
+        if res_query is None:
+            method_response = Response("reservation not found", status=404, mimetype='application/json')
+        else:
+            #convert query data to json object
+            data ={}
+            data['id'] = str(res_query.reservation_id)
+            data['from'] = str(res_query.from_date)
+            data['to'] = str(res_query.to_date)
+            data['room_id'] = str(res_query.room_id)
+            query_result_json = json.dumps(data)
+            #create response with query values
+            method_response = Response(query_result_json, status=200, mimetype='application/json')
 
     return method_response
         
