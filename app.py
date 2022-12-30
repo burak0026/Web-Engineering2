@@ -78,7 +78,7 @@ def welcome():
     # return a json
     return jsonify({'status': 'api working'})
     
-@app.route('/status')
+@app.route('/status/')
 def welcomezwei():
     # return a json
     return jsonify({'status': 'api working new'})
