@@ -98,7 +98,9 @@ def reservations_status_test():
 def reservations_general():
     
     #get Values from Message Body
-    content = request.json
+    #content = request.json
+    content = request.get_json()
+    return Response(content, status=200, mimetype='application/json')
     #validate JSON-Content values
     if checkJSONValues(content) is False:
         return jsonify("invalid values")
