@@ -56,16 +56,27 @@ def checkJSONValues(content):
             uuid.UUID(str(content['room_id']))
         except ValueError:
             return False
+    #if no error, return true
+    return True
+
+#function to check JSON parameters
+def checkQueryValues(before, after, room_id):
     #validate before
-    if content.get('before') is not None:
+    if before is not None:
         try:
-            datetime.datetime.strptime(content['before'], '%Y-%m-%d')
+            datetime.datetime.strptime(before, '%Y-%m-%d')
         except ValueError:
             return False
     #validate after
-    if content.get('after') is not None:
+    if after is not None:
         try:
-            datetime.datetime.strptime(content['after'], '%Y-%m-%d')
+            datetime.datetime.strptime(after, '%Y-%m-%d')
+        except ValueError:
+            return False
+    #validate room_id
+    if room_id is not None:
+        try:
+            uuid.UUID(str(room_id))
         except ValueError:
             return False
     #if no error, return true
@@ -82,50 +93,46 @@ def reservations_status():
 @app.route("/reservations/", methods=['GET', 'POST'])
 def reservations_general():
     
-    #get Values from Message Body
-    
-    #return Response(content, status=200, mimetype='application/json')
-    #validate JSON-Content values
-    #if checkJSONValues(content) is False:
-    #    return jsonify("invalid values")
-
     #POST Request
-#    if request.method == 'POST':
-#get Values from Message Body
-       # content = request.json
- #       #check if room_id is valid
-  #      req_url = "http://backend-assets:9000/assets/rooms/"+content['room_id']+"/"
-  #      #don't know why response for invalid uuid`s is a connectionError instead of Code 404, so workaraound was implemented
-  #      try:
-  #          response = requests.get(req_url)
-  #      except requests.exceptions.ConnectionError:
-  #          return Response("invalid room_id", status=422)
-  #      
-  #      #ckeck for conflicts with other reservations
-  #      res_query = db.session.query(reservations).filter(reservations.room_id == content['room_id']).all()
-  #      if res_query is not None:
-  #          content_from = datetime.datetime.strptime(content.get('from'), '%Y-%m-%d')
-  #          content_from = content_from.date()
-  #          content_to = datetime.datetime.strptime(content.get('to'), '%Y-%m-%d')
-  #          content_to = content_to.date()
-  #          for entry in res_query:
-  #              if ((content_from <= entry.from_date and content_to >= entry.from_date) or (content_from <= entry.to_date and content_to >= entry.to_date) or (content_from >= entry.from_date and content_to <= entry.to_date)):
-  #                  return Response("conflicts with other reservations on the same room", status=409, mimetype='application/json')
+    if request.method == 'POST':
+        #get Values from Message Body
+        content = request.json
+        #validate JSON-Content values
+        if checkJSONValues(content) is False:
+            return jsonify("invalid values")
+        #check if room_id is valid
+        req_url = "http://backend-assets:9000/assets/rooms/"+content['room_id']+"/"
+        #don't know why response for invalid uuid`s is a connectionError instead of Code 404, so workaraound was implemented
+        try:
+            response = requests.get(req_url)
+        except requests.exceptions.ConnectionError:
+            return Response("invalid room_id", status=422)
+        
+        #ckeck for conflicts with other reservations
+        res_query = db.session.query(reservations).filter(reservations.room_id == content['room_id']).all()
+        if res_query is not None:
+            content_from = datetime.datetime.strptime(content.get('from'), '%Y-%m-%d')
+            content_from = content_from.date()
+            content_to = datetime.datetime.strptime(content.get('to'), '%Y-%m-%d')
+            content_to = content_to.date()
+            for entry in res_query:
+                if ((content_from <= entry.from_date and content_to >= entry.from_date) or (content_from <= entry.to_date and content_to >= entry.to_date) or (content_from >= entry.from_date and content_to <= entry.to_date)):
+                    return Response("conflicts with other reservations on the same room", status=409, mimetype='application/json')
                 
         #check if id key is present and add reservation
-  #      if content.get('id') is not None:
-  #          db.session.add(reservations(reservation_id = content['id'], from_date = content['from'], to_date = content['to'], room_id = content['room_id']))
-  #      else:
-  #          db.session.add(reservations(from_date = content['from'], to_date = content['to'], room_id = content['room_id']))
-  #      #commit
-  #      db.session.commit()
-  #      #create response
-  #      method_response = Response("reservation created", status=201, mimetype='application/json')
+        if content.get('id') is not None:
+            db.session.add(reservations(reservation_id = content['id'], from_date = content['from'], to_date = content['to'], room_id = content['room_id']))
+        else:
+            db.session.add(reservations(from_date = content['from'], to_date = content['to'], room_id = content['room_id']))
+        #commit
+        db.session.commit()
+        #create response
+        method_response = Response("reservation created", status=201, mimetype='application/json')
         
     #GET Request
     if request.method == 'GET':
         #validate values
-
+        checkQueryValues(request.args.get('before'), request.args.get('after'), request.args.get('room_id'))
         #make query, filter by parameters if present
         res_query = db.session.query(reservations)
         if request.args.get('room_id') is not None:
@@ -213,5 +220,4 @@ def reservations_byID(input_id: str):
 
 if __name__ == '__main__':
     #define the localhost ip and the port that is going to be used
-    #app.run(host=os.getenv('HOST'), port=os.getenv('PORT'))
-    app.run(host="0.0.0.0", port=9000, debug=True)
+    app.run(host=os.getenv('HOST'), port=os.getenv('PORT'), debug=True)
