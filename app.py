@@ -132,7 +132,8 @@ def reservations_general():
     #GET Request
     if request.method == 'GET':
         #validate values
-        checkQueryValues(request.args.get('before'), request.args.get('after'), request.args.get('room_id'))
+        if checkQueryValues(request.args.get('before'), request.args.get('after'), request.args.get('room_id')) is False:
+            return jsonify("invalid values")
         #make query, filter by parameters if present
         res_query = db.session.query(reservations)
         if request.args.get('room_id') is not None:
