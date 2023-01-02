@@ -73,7 +73,7 @@ def checkJSONValues(content):
 
 #Defining the Routes
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def welcome():
     # return a json
     return jsonify({'status': 'api working'})
