@@ -73,33 +73,17 @@ def checkJSONValues(content):
 
 #Defining the Routes
 
-#@app.route('/', methods=['GET'])
-#def welcome():
-#    # return a json
-#    return jsonify({'status': 'api working'})
-    
-#@app.route('/status')
-#def welcomezwei():
-#    # return a json
-#    return jsonify({'status': 'api working new'})
-
-
 @app.route("/reservations/status/", methods=['GET'])
 def reservations_status():
-    return Response("{'message':'status ok (mit res)'}", status=200, mimetype='application/json')
+    return Response("{'message':'status ok'}", status=200, mimetype='application/json')
     
-
-@app.route("/status/", methods=['GET'])
-def reservations_status_test():
-    return Response("{'message':'status ok (ohne res)')}", status=200, mimetype='application/json')
 
 
 @app.route("/reservations/", methods=['GET', 'POST'])
 def reservations_general():
     
     #get Values from Message Body
-    #content = request.json
-    #content = request.get_json()
+    
     #return Response(content, status=200, mimetype='application/json')
     #validate JSON-Content values
     #if checkJSONValues(content) is False:
@@ -107,6 +91,8 @@ def reservations_general():
 
     #POST Request
 #    if request.method == 'POST':
+#get Values from Message Body
+       # content = request.json
  #       #check if room_id is valid
   #      req_url = "http://backend-assets:9000/assets/rooms/"+content['room_id']+"/"
   #      #don't know why response for invalid uuid`s is a connectionError instead of Code 404, so workaraound was implemented
@@ -138,14 +124,16 @@ def reservations_general():
         
     #GET Request
     if request.method == 'GET':
+        #validate values
+
         #make query, filter by parameters if present
         res_query = db.session.query(reservations)
-        #if content.get('room_id') is not None:
-        #    res_query = res_query.filter(reservations.room_id == content['room_id'])  
-        #if content.get('before') is not None:
-        #    res_query = res_query.filter(reservations.from_date < content['before'])
-        #if content.get('after') is not None:
-        #    res_query = res_query.filter(reservations.to_date > content['after'])
+        if request.args.get('room_id') is not None:
+            res_query = res_query.filter(reservations.room_id == request.args.get('room_id'))  
+        if request.args.get('before') is not None:
+            res_query = res_query.filter(reservations.from_date < request.args.get('before'))
+        if request.args.get('after') is not None:
+            res_query = res_query.filter(reservations.to_date > request.args.get('after'))
         res_query.all()
         #check if a reservation for the query is present
         if res_query is None:
@@ -168,7 +156,7 @@ def reservations_general():
     return method_response
         
         
-@app.route("/reservations/<input_id>", methods=['GET', 'PUT', 'DELETE'])
+@app.route("/reservations/<input_id>/", methods=['GET', 'PUT', 'DELETE'])
 def reservations_byID(input_id: str): 
     #validate id
     try:
