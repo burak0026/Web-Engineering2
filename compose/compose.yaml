@@ -83,7 +83,7 @@ services:
       POSTGRES_RESERVATIONS_HOST: "postgres"
       POSTGRES_RESERVATIONS_PORT: "5432"
       PORT: "9000"
-      HOST: "backend-reservations"
+      HOST: "0.0.0.0"
     expose:
       - "9000"
     restart: unless-stopped

@@ -223,4 +223,5 @@ def reservations_byID(input_id: str):
 
 if __name__ == '__main__':
     #define the localhost ip and the port that is going to be used
-    app.run(host=os.getenv('HOST'), port=os.getenv('PORT'))
+    #app.run(host=os.getenv('HOST'), port=os.getenv('PORT'))
+    app.run(host="0.0.0.0", port=9000, debug=True)
