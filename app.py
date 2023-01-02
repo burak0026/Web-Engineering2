@@ -73,28 +73,23 @@ def checkJSONValues(content):
 
 #Defining the Routes
 
-@app.route('/', methods=['GET'])
-def welcome():
-    # return a json
-    return jsonify({'status': 'api working'})
+#@app.route('/', methods=['GET'])
+#def welcome():
+#    # return a json
+#    return jsonify({'status': 'api working'})
     
-@app.route('/status/')
-def welcomezwei():
-    # return a json
-    return jsonify({'status': 'api working new'})
+#@app.route('/status')
+#def welcomezwei():
+#    # return a json
+#    return jsonify({'status': 'api working new'})
 
 
 @app.route("/reservations/status", methods=['GET'])
 def reservations_status():
     return Response("{'message':'status ok'}", status=200, mimetype='application/json')
     
-    
-    
-    
-    
 
-
-@app.route("/reservations/", methods=['GET', 'POST'])
+@app.route("/reservations", methods=['GET', 'POST'])
 def reservations_general():
     
     #get Values from Message Body
