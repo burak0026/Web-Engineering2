@@ -90,7 +90,7 @@ def reservations_status():
     
 
 @app.route("/status/", methods=['GET'])
-def reservations_status():
+def reservations_status_test():
     return Response("{'message':'status ok (ohne res)')}", status=200, mimetype='application/json')
 
 
