@@ -3,6 +3,6 @@
 FROM python:3.9
 COPY requirements.txt /requirements.txt
 COPY app.py /app.py
-COPY  40-merge-global-config.sh compose/apidocs/docker-entrypoint.d/40-merge-global-config.sh
+COPY  40-merge-global-config.sh ./compose/apidocs/docker-entrypoint.d/40-merge-global-config.sh
 RUN pip install -r requirements.txt
 CMD ["python", "app.py"]
