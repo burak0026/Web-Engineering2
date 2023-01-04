@@ -82,6 +82,10 @@ def checkQueryValues(before, after, room_id):
     #if no error, return true
     return True
 
+
+@app.route("/login/", methods=['GET'])
+def reservations_status():
+    return Response("{'message':'status ok'}", status=200, mimetype='application/json')
 #Defining the Routes
 
 @app.route("/reservations/status/", methods=['GET'])
