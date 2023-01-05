@@ -134,7 +134,8 @@ def reservations_general():
             auth_token = auth_header.split(" ")[1]
         else:
             auth_token = None
-        validate_jwt(auth_token)
+        resp = validate_jwt(auth_token)
+        return resp
         #get Values from Message Body
         content = request.json
         #validate JSON-Content values
