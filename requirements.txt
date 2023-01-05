@@ -3,3 +3,4 @@ Flask-SQLAlchemy
 Flask-jwt-extended
 psycopg2
 requests
+cryptography
