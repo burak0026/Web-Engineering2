@@ -91,7 +91,7 @@ def checkQueryValues(before, after, room_id):
 
 def validate_jwt(token):
     if token is None:
-        method_response = Response("token not found", status=401)
+        return Response("token not found", status=401)
     #get public key from Keycloak
     keycloak_url = f"http://{os.getenv('KEYCLOAK_HOST')}/auth/realms/{os.getenv('KEYCLOAK_REALM')}"
     keycloak_request = requests.get(keycloak_url)
@@ -99,18 +99,17 @@ def validate_jwt(token):
     keycloak_pubkey = keycloak_request_json["public_key"]
     #check if key is present, else throw 401
     if keycloak_pubkey is None:
-        method_response = Response("public key not found", status=401)
+        return  Response("public key not found", status=401)
     #add header/footer to public key and serialize
     keycloak_pubkey = "-----BEGIN PUBLIC KEY-----\n"+keycloak_pubkey+"\n-----END PUBLIC KEY-----"
     keycloak_pubkey = serialization.load_pem_public_key(bytes(keycloak_pubkey,'UTF-8'),default_backend)
     #check if token is valid
     try:
         jwt.decode(token,keycloak_pubkey,algorithms=["RS256"],audience="account")
-        method_response = True
+        return True
     except Exception:
-        method_response = Response("invalid token", status=401)
+        return Response("invalid token", status=401)
 
-    return method_response
 
 
 #Defining the Routes
