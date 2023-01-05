@@ -85,9 +85,18 @@ def checkQueryValues(before, after, room_id):
 
 #Defining the Routes
 
+@app.route("/reservations/test/", methods=['GET'])
+def reservations_test():
+   
+    keycloak_url = f"http://{os.getenv('KEYCLOAK_HOST')}/auth/realms/{os.getenv('KEYCLOAK_REALM')}"
+    keycloak_pubkey = requests.get(keycloak_url)
+    return keycloak_pubkey.text
+
+
 @app.route("/reservations/status/", methods=['GET'])
 def reservations_status():
-    return {
+
+     return {
         "authors": "Burak Oezkan, Marius Engelmeier",
         "apiVersion": "1.0"
         }
