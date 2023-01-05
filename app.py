@@ -7,6 +7,9 @@ import jwt
 from flask import Flask, jsonify, request, Response, make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import UUID
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+
 
 
 #create flask app and configure
@@ -97,6 +100,9 @@ def validate_jwt(token):
     #check if key is present, else throw 401
     if keycloak_pubkey is None:
         return Response("public key not found", status=401)
+    #add header/footer to public key and serialize
+    keycloak_pubkey = "-----BEGIN PUBLIC KEY-----\n"+keycloak_pubkey+"\n-----END PUBLIC KEY-----"
+    keycloak_pubkey = serialization.load_pem_public_key(bytes(keycloak_pubkey,'UTF-8'),default_backend)
     #check if token is valid
     try:
         jwt.decode(token,keycloak_pubkey,algorithms=["RS256"])
