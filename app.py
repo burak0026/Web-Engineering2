@@ -105,7 +105,7 @@ def validate_jwt(token):
     keycloak_pubkey = serialization.load_pem_public_key(bytes(keycloak_pubkey,'UTF-8'),default_backend)
     #check if token is valid
     try:
-        jwt.decode(token,keycloak_pubkey,algorithms=["RS256"])
+        jwt.decode(token,keycloak_pubkey,algorithms=["RS256"],audience="account")
         return Response("decode successfull", status=222)
     except Exception:
         return Response("decode failed", status=401)
