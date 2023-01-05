@@ -7,6 +7,7 @@ from flask import Flask, jsonify, request, Response, make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import UUID
 
+
 #create flask app and configure
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://'+os.getenv('POSTGRES_RESERVATIONS_USER')+':'+os.getenv('POSTGRES_RESERVATIONS_PASSWORD')+'@'+os.getenv('POSTGRES_RESERVATIONS_HOST')+':'+os.getenv('POSTGRES_RESERVATIONS_PORT')+'/'+os.getenv('POSTGRES_RESERVATIONS_DBNAME')+''
@@ -82,17 +83,14 @@ def checkQueryValues(before, after, room_id):
     #if no error, return true
     return True
 
-
-@app.route("/login/", methods=['GET'])
-def reservations_status():
-    return Response("{'message':'status ok'}", status=200, mimetype='application/json')
 #Defining the Routes
 
 @app.route("/reservations/status/", methods=['GET'])
 def reservations_status():
-    return Response("{'message':'status ok'}", status=200, mimetype='application/json')
-    
-
+    return {
+        "authors": "Burak Oezkan, Marius Engelmeier",
+        "apiVersion": "1.0"
+        }
 
 @app.route("/reservations/", methods=['GET', 'POST'])
 def reservations_general():
