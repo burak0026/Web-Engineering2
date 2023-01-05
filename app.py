@@ -83,15 +83,28 @@ def checkQueryValues(before, after, room_id):
     #if no error, return true
     return True
 
+
+
+def validate_jwt():
+    #get public key from Keycloak
+    keycloak_url = f"http://{os.getenv('KEYCLOAK_HOST')}/auth/realms/{os.getenv('KEYCLOAK_REALM')}"
+    keycloak_request = requests.get(keycloak_url)
+    keycloak_request_json = json.loads(keycloak_request.text)
+    keycloak_pubkey = keycloak_request_json["public_key"]
+    #check if key is present, else throw 401
+    if keycloak_pubkey is None:
+        return Response("public key not found", status=401)
+    #get token
+
+
+
 #Defining the Routes
 
 @app.route("/reservations/test/", methods=['GET'])
 def reservations_test():
-    #get public key from Keycloack
-    keycloak_url = f"http://{os.getenv('KEYCLOAK_HOST')}/auth/realms/{os.getenv('KEYCLOAK_REALM')}"
-    keycloak_pubkey = requests.get(keycloak_url)
-    keycloak_pubkey_string = json.loads(keycloak_pubkey.text)
-    return keycloak_pubkey_string["public_key"]
+    
+    
+    return str(request.headers.get('Authorization'))
 
 
 @app.route("/reservations/status/", methods=['GET'])
