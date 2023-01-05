@@ -3,6 +3,7 @@ import json
 import datetime
 import uuid
 import requests
+import jwt
 from flask import Flask, jsonify, request, Response, make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import UUID
@@ -85,7 +86,9 @@ def checkQueryValues(before, after, room_id):
 
 
 
-def validate_jwt():
+def validate_jwt(token):
+    if token is None:
+        return Response("token not found", status=401)
     #get public key from Keycloak
     keycloak_url = f"http://{os.getenv('KEYCLOAK_HOST')}/auth/realms/{os.getenv('KEYCLOAK_REALM')}"
     keycloak_request = requests.get(keycloak_url)
@@ -94,7 +97,14 @@ def validate_jwt():
     #check if key is present, else throw 401
     if keycloak_pubkey is None:
         return Response("public key not found", status=401)
-    #get token
+    #check if token is valid
+    try:
+        jwt.decode(token,keycloak_pubkey,algorithms=["RS256"])
+        return Response("decode successfull", status=222)
+    except Exception:
+        return Response("decode failed", status=401)
+
+
 
 
 
@@ -102,9 +112,7 @@ def validate_jwt():
 
 @app.route("/reservations/test/", methods=['GET'])
 def reservations_test():
-    
-    
-    return str(request.headers.get('Authorization'))
+    pass
 
 
 @app.route("/reservations/status/", methods=['GET'])
@@ -120,6 +128,13 @@ def reservations_general():
     
     #POST Request
     if request.method == 'POST':
+        # get auth token from header
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            auth_token = auth_header.split(" ")[1]
+        else:
+            auth_token = None
+        validate_jwt(auth_token)
         #get Values from Message Body
         content = request.json
         #validate JSON-Content values
