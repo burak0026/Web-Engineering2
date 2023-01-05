@@ -87,11 +87,11 @@ def checkQueryValues(before, after, room_id):
 
 @app.route("/reservations/test/", methods=['GET'])
 def reservations_test():
-   
+    #get public key from Keycloack
     keycloak_url = f"http://{os.getenv('KEYCLOAK_HOST')}/auth/realms/{os.getenv('KEYCLOAK_REALM')}"
     keycloak_pubkey = requests.get(keycloak_url)
-    keycloak_json = json.dumps(keycloak_pubkey.text)
-    return keycloak_json["public_key"]
+    keycloak_pubkey_string = json.loads(keycloak_pubkey.text)
+    return keycloak_pubkey_string["public_key"]
 
 
 @app.route("/reservations/status/", methods=['GET'])
