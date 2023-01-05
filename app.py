@@ -90,7 +90,8 @@ def reservations_test():
    
     keycloak_url = f"http://{os.getenv('KEYCLOAK_HOST')}/auth/realms/{os.getenv('KEYCLOAK_REALM')}"
     keycloak_pubkey = requests.get(keycloak_url)
-    return keycloak_pubkey.text
+    keycloak_json = json.dumps(keycloak_pubkey.text)
+    return keycloak_json["public_key"]
 
 
 @app.route("/reservations/status/", methods=['GET'])
