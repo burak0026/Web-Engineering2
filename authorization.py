@@ -7,9 +7,9 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
 
-def validate_jwt(token, app):
+def validate_jwt(token):
     if token is None:
-        app.logger.error('JWT not Found')
+        #app.logger.error('JWT not Found')
         return Response("token not found", status=401)
     #get public key from Keycloak
     keycloak_url = f"http://{os.getenv('KEYCLOAK_HOST')}/auth/realms/{os.getenv('KEYCLOAK_REALM')}"
@@ -18,7 +18,7 @@ def validate_jwt(token, app):
     keycloak_pubkey = keycloak_request_json["public_key"]
     #check if key is present, else throw 401
     if keycloak_pubkey is None:
-        app.logger.error('Public key not Found')
+        #app.logger.error('Public key not Found')
         return  Response("public key not found", status=401)
     #add header/footer to public key and serialize
     keycloak_pubkey = "-----BEGIN PUBLIC KEY-----\n"+keycloak_pubkey+"\n-----END PUBLIC KEY-----"
@@ -28,5 +28,5 @@ def validate_jwt(token, app):
         jwt.decode(token,keycloak_pubkey,algorithms=["RS256"],audience="account")
         return True
     except Exception:
-        app.logger.error('invalid Token')
+        #app.logger.error('invalid Token')
         return Response("invalid token", status=401)
