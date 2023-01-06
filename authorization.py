@@ -7,9 +7,6 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
 
-
-
-
 def validate_jwt(token, app):
     if token is None:
         app.logger.error('JWT not Found')

@@ -7,7 +7,7 @@ from flask import Flask, jsonify, request, Response, make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import UUID
 
-from authorization import validate_jwt
+from authorization import *
 
 
 #create flask app and configure
