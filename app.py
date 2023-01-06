@@ -10,8 +10,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
-
-
 #create flask app and configure
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://'+os.getenv('POSTGRES_RESERVATIONS_USER')+':'+os.getenv('POSTGRES_RESERVATIONS_PASSWORD')+'@'+os.getenv('POSTGRES_RESERVATIONS_HOST')+':'+os.getenv('POSTGRES_RESERVATIONS_PORT')+'/'+os.getenv('POSTGRES_RESERVATIONS_DBNAME')+''
@@ -42,24 +40,28 @@ def checkJSONValues(content):
         try:
             uuid.UUID(str(content['id']))
         except ValueError:
+            app.logger.error("JSON ValueError 'id'")
             return False
     #validate from
     if content.get('from') is not None:
         try:
             datetime.datetime.strptime(content['from'], '%Y-%m-%d')
         except ValueError:
+            app.logger.error("JSON ValueError 'from'")
             return False
     #validate to
     if content.get('to') is not None:
         try:
             datetime.datetime.strptime(content['to'], '%Y-%m-%d')
         except ValueError:
+            app.logger.error("JSON ValueError 'to'")
             return False
     #validate room_id
     if content.get('room_id') is not None:
         try:
             uuid.UUID(str(content['room_id']))
         except ValueError:
+            app.logger.error("JSON ValueError 'room_id'")
             return False
     #if no error, return true
     return True
@@ -71,18 +73,21 @@ def checkQueryValues(before, after, room_id):
         try:
             datetime.datetime.strptime(before, '%Y-%m-%d')
         except ValueError:
+            app.logger.error("Query ValueError 'from'")
             return False
     #validate after
     if after is not None:
         try:
             datetime.datetime.strptime(after, '%Y-%m-%d')
         except ValueError:
+            app.logger.error("Query ValueError 'after'")
             return False
     #validate room_id
     if room_id is not None:
         try:
             uuid.UUID(str(room_id))
         except ValueError:
+            app.logger.error("Query ValueError 'room_id'")
             return False
     #if no error, return true
     return True
@@ -91,7 +96,7 @@ def checkQueryValues(before, after, room_id):
 
 def validate_jwt(token):
     if token is None:
-        app.logger.info('token not Found')
+        app.logger.error('JWT not Found')
         return Response("token not found", status=401)
     #get public key from Keycloak
     keycloak_url = f"http://{os.getenv('KEYCLOAK_HOST')}/auth/realms/{os.getenv('KEYCLOAK_REALM')}"
@@ -100,6 +105,7 @@ def validate_jwt(token):
     keycloak_pubkey = keycloak_request_json["public_key"]
     #check if key is present, else throw 401
     if keycloak_pubkey is None:
+        app.logger.error('Public key not Found')
         return  Response("public key not found", status=401)
     #add header/footer to public key and serialize
     keycloak_pubkey = "-----BEGIN PUBLIC KEY-----\n"+keycloak_pubkey+"\n-----END PUBLIC KEY-----"
@@ -109,18 +115,15 @@ def validate_jwt(token):
         jwt.decode(token,keycloak_pubkey,algorithms=["RS256"],audience="account")
         return True
     except Exception:
-        app.logger.info('invalid Token')
+        app.logger.error('invalid Token')
         return Response("invalid token", status=401)
 
 
 
 #Defining the Routes
-
-
-
 @app.route("/reservations/status/", methods=['GET'])
 def reservations_status():
-    app.logger.info('Statusinfo')
+    app.logger.info('Get Statusinformation')
     return {
         "authors": "Burak Oezkan, Marius Engelmeier",
         "apiVersion": "1.0"
@@ -145,7 +148,7 @@ def reservations_general():
         content = request.json
         #validate JSON-Content values
         if checkJSONValues(content) is False:
-            app.logger.info('invalid values')
+            app.logger.error('invalid JSON values')
             return Response("invalid values")
         #check if room_id is valid
         req_url = f"http://{os.getenv('ASSETS_API_HOST')}:{os.getenv('ASSETS_API_PORT')}/assets/rooms/"+content['room_id']+"/"
@@ -153,6 +156,7 @@ def reservations_general():
         try:
             response = requests.get(req_url)
         except requests.exceptions.ConnectionError:
+            app.logger.error('invalid room_id')
             return Response("invalid room_id", status=422)
         
         #ckeck for conflicts with other reservations
@@ -164,6 +168,7 @@ def reservations_general():
             content_to = content_to.date()
             for entry in res_query:
                 if ((content_from <= entry.from_date and content_to >= entry.from_date) or (content_from <= entry.to_date and content_to >= entry.to_date) or (content_from >= entry.from_date and content_to <= entry.to_date)):
+                    app.logger.error('Conflict with other reservation')
                     return Response("conflicts with other reservations on the same room", status=409)
                 
         #check if id key is present and add reservation
@@ -174,12 +179,14 @@ def reservations_general():
         #commit
         db.session.commit()
         #create response
+        app.logger.info('Reservation was created')
         method_response = Response("reservation created", status=201)
         
     #GET Request
     if request.method == 'GET':
         #validate values
         if checkQueryValues(request.args.get('before'), request.args.get('after'), request.args.get('room_id')) is False:
+            app.logger.info('Reservation was created')
             return Response("reservation created")
         #make query, filter by parameters if present
         res_query = db.session.query(reservations)
@@ -193,6 +200,7 @@ def reservations_general():
         #check if a reservation for the query is present
         if res_query is None:
             #create error response
+            app.logger.error('Reservation was not found')
             method_response = Response("reservation not found", status=404)
         else:
             #convert query data to json object
@@ -217,6 +225,7 @@ def reservations_byID(input_id: str):
     try:
         uuid.UUID(input_id)
     except ValueError:
+        app.logger.error('Invalid Id')
         return Response("invalid id", status=400)
     #make query for id
     res_query = reservations.query.filter_by(reservation_id=input_id).first()
@@ -224,6 +233,7 @@ def reservations_byID(input_id: str):
     #GET request
     if request.method == 'GET':
         if res_query is None:
+            app.logger.error('Reservation not found')
             method_response = Response("reservation not found", status=404)
         else:
             #convert query data to json object
@@ -242,6 +252,7 @@ def reservations_byID(input_id: str):
         content = request.json
         #validate JSON-Content values
         if checkJSONValues(content) is False:
+            app.logger.error('Invalid parameters in JSON')
             return Response("invalid parameters in JSON Body", status=405)
         #check if room_id is valid
         req_url = "http://backend-assets:9000/assets/rooms/"+content['room_id']+"/"
@@ -249,6 +260,7 @@ def reservations_byID(input_id: str):
         try:
             response = requests.get(req_url)
         except requests.exceptions.ConnectionError:
+            app.logger.error('Invalid room_id')
             return Response("invalid room_id", status=422)
         
         #ckeck for conflicts with other reservations
@@ -260,6 +272,7 @@ def reservations_byID(input_id: str):
             content_to = content_to.date()
             for entry in res_query_rooms:
                 if ((content_from <= entry.from_date and content_to >= entry.from_date) or (content_from <= entry.to_date and content_to >= entry.to_date) or (content_from >= entry.from_date and content_to <= entry.to_date)):
+                    app.logger.error('Conflicts with other Reservation')
                     return Response("conflicts with other reservations on the same room", status=409)
         
         if res_query is None:
@@ -278,6 +291,7 @@ def reservations_byID(input_id: str):
             #update existing entry
             reservations.query.filter_by(reservation_id=input_id).update(dict(from_date=content['from'], to_date = content['to'], room_id = content['room_id']))
         #return response
+        app.logger.info('Created/ Updated Reservation')
         method_response = Response("reservation created/updated", status=204) 
         
     #DELETE request
@@ -294,8 +308,10 @@ def reservations_byID(input_id: str):
         num_deleted = reservations.query.filter_by(reservation_id=input_id).delete()
         #check if object was deleted
         if num_deleted > 0 :
+            app.logger.info('Reservation was deleted')
             method_response = Response("reservation deleted", status=204) 
         else:
+            app.logger.error('Reservation was not found')
             method_response = Response("reservation not found", status=404)
 
     #commit changes
