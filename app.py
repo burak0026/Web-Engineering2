@@ -91,6 +91,7 @@ def checkQueryValues(before, after, room_id):
 
 def validate_jwt(token):
     if token is None:
+        app.logger.info('token not Found')
         return Response("token not found", status=401)
     #get public key from Keycloak
     keycloak_url = f"http://{os.getenv('KEYCLOAK_HOST')}/auth/realms/{os.getenv('KEYCLOAK_REALM')}"
@@ -108,6 +109,7 @@ def validate_jwt(token):
         jwt.decode(token,keycloak_pubkey,algorithms=["RS256"],audience="account")
         return True
     except Exception:
+        app.logger.info('invalid Token')
         return Response("invalid token", status=401)
 
 
@@ -118,8 +120,8 @@ def validate_jwt(token):
 
 @app.route("/reservations/status/", methods=['GET'])
 def reservations_status():
-
-     return {
+    app.logger.info('Statusinfo')
+    return {
         "authors": "Burak Oezkan, Marius Engelmeier",
         "apiVersion": "1.0"
         }
@@ -143,6 +145,7 @@ def reservations_general():
         content = request.json
         #validate JSON-Content values
         if checkJSONValues(content) is False:
+            app.logger.info('invalid values')
             return Response("invalid values")
         #check if room_id is valid
         req_url = f"http://{os.getenv('ASSETS_API_HOST')}:{os.getenv('ASSETS_API_PORT')}/assets/rooms/"+content['room_id']+"/"
