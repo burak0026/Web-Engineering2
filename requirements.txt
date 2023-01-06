@@ -4,8 +4,3 @@ jwt
 psycopg2
 requests
 cryptography
-json
-os
-datetim
-uuid
-sqlalchemy
