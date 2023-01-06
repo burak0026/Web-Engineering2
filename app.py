@@ -114,9 +114,6 @@ def validate_jwt(token):
 
 #Defining the Routes
 
-@app.route("/reservations/test/", methods=['GET'])
-def reservations_test():
-    pass
 
 
 @app.route("/reservations/status/", methods=['GET'])
@@ -243,10 +240,38 @@ def reservations_byID(input_id: str):
         #validate JSON-Content values
         if checkJSONValues(content) is False:
             return Response("invalid parameters in JSON Body", status=405, mimetype='application/json')
+        #check if room_id is valid
+        req_url = "http://backend-assets:9000/assets/rooms/"+content['room_id']+"/"
+        #don't know why response for invalid uuid`s is a connectionError instead of Code 404, so workaraound was implemented
+        try:
+            response = requests.get(req_url)
+        except requests.exceptions.ConnectionError:
+            return Response("invalid room_id", status=422)
+        
+        #ckeck for conflicts with other reservations
+        res_query_rooms = db.session.query(reservations).filter(reservations.room_id == content['room_id']).all()
+        if res_query_rooms is not None:
+            content_from = datetime.datetime.strptime(content.get('from'), '%Y-%m-%d')
+            content_from = content_from.date()
+            content_to = datetime.datetime.strptime(content.get('to'), '%Y-%m-%d')
+            content_to = content_to.date()
+            for entry in res_query_rooms:
+                if ((content_from <= entry.from_date and content_to >= entry.from_date) or (content_from <= entry.to_date and content_to >= entry.to_date) or (content_from >= entry.from_date and content_to <= entry.to_date)):
+                    return Response("conflicts with other reservations on the same room", status=409, mimetype='application/json')
+        
         if res_query is None:
             #insert new entry
             db.session.add(reservations(reservation_id = input_id, from_date = content['from'], to_date = content['to'], room_id = content['room_id']))     
         else:
+            auth_header = request.headers.get('Authorization')
+            if auth_header:
+                auth_token = auth_header.split(" ")[1]
+            else:
+                auth_token = None
+            #validate token
+            resp = validate_jwt(auth_token)
+            if resp is not True:
+                return resp
             #update existing entry
             reservations.query.filter_by(reservation_id=input_id).update(dict(from_date=content['from'], to_date = content['to'], room_id = content['room_id']))
         #return response
@@ -254,6 +279,15 @@ def reservations_byID(input_id: str):
         
     #DELETE request
     else:
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            auth_token = auth_header.split(" ")[1]
+        else:
+            auth_token = None
+        #validate token
+        resp = validate_jwt(auth_token)
+        if resp is not True:
+            return resp
         num_deleted = reservations.query.filter_by(reservation_id=input_id).delete()
         #check if object was deleted
         if num_deleted > 0 :
