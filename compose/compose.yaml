@@ -84,6 +84,8 @@ services:
       POSTGRES_RESERVATIONS_PORT: "5432"
       PORT: "9000"
       HOST: "0.0.0.0"
+      ASSETS_API_HOST: "backend-assets"
+      ASSETS_API_PORT: "9000"
     expose:
       - "9000"
     restart: unless-stopped

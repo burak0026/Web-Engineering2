@@ -143,9 +143,9 @@ def reservations_general():
         content = request.json
         #validate JSON-Content values
         if checkJSONValues(content) is False:
-            return jsonify("invalid values")
+            return Response("invalid values")
         #check if room_id is valid
-        req_url = "http://backend-assets:9000/assets/rooms/"+content['room_id']+"/"
+        req_url = f"http://{os.getenv('ASSETS_API_HOST')}:{os.getenv('ASSETS_API_PORT')}/assets/rooms/"+content['room_id']+"/"
         #don't know why response for invalid uuid`s is a connectionError instead of Code 404, so workaraound was implemented
         try:
             response = requests.get(req_url)
@@ -161,7 +161,7 @@ def reservations_general():
             content_to = content_to.date()
             for entry in res_query:
                 if ((content_from <= entry.from_date and content_to >= entry.from_date) or (content_from <= entry.to_date and content_to >= entry.to_date) or (content_from >= entry.from_date and content_to <= entry.to_date)):
-                    return Response("conflicts with other reservations on the same room", status=409, mimetype='application/json')
+                    return Response("conflicts with other reservations on the same room", status=409)
                 
         #check if id key is present and add reservation
         if content.get('id') is not None:
@@ -171,13 +171,13 @@ def reservations_general():
         #commit
         db.session.commit()
         #create response
-        method_response = Response("{'result' : 'reservation created'}", status=201, mimetype='application/json')
+        method_response = Response("reservation created", status=201)
         
     #GET Request
     if request.method == 'GET':
         #validate values
         if checkQueryValues(request.args.get('before'), request.args.get('after'), request.args.get('room_id')) is False:
-            return jsonify("invalid values")
+            return Response("reservation created")
         #make query, filter by parameters if present
         res_query = db.session.query(reservations)
         if request.args.get('room_id') is not None:
@@ -190,7 +190,7 @@ def reservations_general():
         #check if a reservation for the query is present
         if res_query is None:
             #create error response
-            method_response = Response("reservation not found", status=404, mimetype='application/json')
+            method_response = Response("reservation not found", status=404)
         else:
             #convert query data to json object
             data = []
@@ -214,14 +214,14 @@ def reservations_byID(input_id: str):
     try:
         uuid.UUID(input_id)
     except ValueError:
-        return Response(status=400, mimetype='application/json')
+        return Response("invalid id", status=400)
     #make query for id
     res_query = reservations.query.filter_by(reservation_id=input_id).first()
 
     #GET request
     if request.method == 'GET':
         if res_query is None:
-            method_response = Response("reservation not found", status=404, mimetype='application/json')
+            method_response = Response("reservation not found", status=404)
         else:
             #convert query data to json object
             data ={}
@@ -239,7 +239,7 @@ def reservations_byID(input_id: str):
         content = request.json
         #validate JSON-Content values
         if checkJSONValues(content) is False:
-            return Response("invalid parameters in JSON Body", status=405, mimetype='application/json')
+            return Response("invalid parameters in JSON Body", status=405)
         #check if room_id is valid
         req_url = "http://backend-assets:9000/assets/rooms/"+content['room_id']+"/"
         #don't know why response for invalid uuid`s is a connectionError instead of Code 404, so workaraound was implemented
@@ -257,7 +257,7 @@ def reservations_byID(input_id: str):
             content_to = content_to.date()
             for entry in res_query_rooms:
                 if ((content_from <= entry.from_date and content_to >= entry.from_date) or (content_from <= entry.to_date and content_to >= entry.to_date) or (content_from >= entry.from_date and content_to <= entry.to_date)):
-                    return Response("conflicts with other reservations on the same room", status=409, mimetype='application/json')
+                    return Response("conflicts with other reservations on the same room", status=409)
         
         if res_query is None:
             #insert new entry
@@ -275,7 +275,7 @@ def reservations_byID(input_id: str):
             #update existing entry
             reservations.query.filter_by(reservation_id=input_id).update(dict(from_date=content['from'], to_date = content['to'], room_id = content['room_id']))
         #return response
-        method_response = Response("reservation created/updated", status=204, mimetype='application/json') 
+        method_response = Response("reservation created/updated", status=204) 
         
     #DELETE request
     else:
@@ -291,9 +291,9 @@ def reservations_byID(input_id: str):
         num_deleted = reservations.query.filter_by(reservation_id=input_id).delete()
         #check if object was deleted
         if num_deleted > 0 :
-            method_response = Response("reservation deleted", status=204, mimetype='application/json') 
+            method_response = Response("reservation deleted", status=204) 
         else:
-            method_response = Response("reservation not found", status=404, mimetype='application/json')
+            method_response = Response("reservation not found", status=404)
 
     #commit changes
     db.session.commit()
