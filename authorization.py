@@ -5,12 +5,12 @@ import json
 from flask import Response
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
-from app import app
 
 
 
 
-def validate_jwt(token):
+
+def validate_jwt(token, app):
     if token is None:
         app.logger.error('JWT not Found')
         return Response("token not found", status=401)

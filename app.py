@@ -118,7 +118,7 @@ def reservations_general():
         else:
             auth_token = None
         #validate token
-        resp = validate_jwt(auth_token)
+        resp = validate_jwt(auth_token, app)
         if resp is not True:
             return resp
         #get Values from Message Body
@@ -262,7 +262,7 @@ def reservations_byID(input_id: str):
             else:
                 auth_token = None
             #validate token
-            resp = validate_jwt(auth_token)
+            resp = validate_jwt(auth_token, app)
             if resp is not True:
                 return resp
             #update existing entry
@@ -279,7 +279,7 @@ def reservations_byID(input_id: str):
         else:
             auth_token = None
         #validate token
-        resp = validate_jwt(auth_token)
+        resp = validate_jwt(auth_token, app)
         if resp is not True:
             return resp
         num_deleted = reservations.query.filter_by(reservation_id=input_id).delete()
