@@ -171,7 +171,7 @@ def reservations_general():
         #commit
         db.session.commit()
         #create response
-        method_response = Response("reservation created", status=201, mimetype='application/json')
+        method_response = Response("{'result' : 'reservation created'}", status=201, mimetype='application/json')
         
     #GET Request
     if request.method == 'GET':
