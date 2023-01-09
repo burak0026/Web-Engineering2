@@ -1,6 +1,6 @@
 flask
 Flask-SQLAlchemy
-jwt
+Flask-jwt-extended
 psycopg2
 requests
 cryptography
