@@ -225,17 +225,15 @@ def reservations_byID(input_id: str):
         if resp is not True:
             return resp
         #num_deleted = res_query.delete()
-        app.logger.info('prepare delete')
-        num_deleted = db.session.delete(res_query)
-        app.logger.info('deleted')
-        app.logger.info(num_deleted)
-        #check if object was deleted
-        if num_deleted > 0 :
-            app.logger.info('Reservation was deleted')
-            method_response = Response("reservation deleted", status=204) 
-        else:
+        if res_query is None:
             app.logger.error('Reservation was not found')
             method_response = Response("reservation not found", status=404)
+        else:
+            app.logger.info('prepare delete')
+            db.session.delete(res_query)
+            app.logger.info('deleted')
+            app.logger.info('Reservation was deleted')
+            method_response = Response("reservation deleted", status=204)
 
     #commit changes
     db.session.commit()
