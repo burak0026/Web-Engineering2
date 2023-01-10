@@ -16,25 +16,6 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://'+os.getenv('POSTGRES_RESERVATIONS_USER')+':'+os.getenv('POSTGRES_RESERVATIONS_PASSWORD')+'@'+os.getenv('POSTGRES_RESERVATIONS_HOST')+':'+os.getenv('POSTGRES_RESERVATIONS_PORT')+'/'+os.getenv('POSTGRES_RESERVATIONS_DBNAME')+''
 db = SQLAlchemy(app)
 
-#create model class with database scheme
-class reservations(db.Model):
-    reservation_id = db.Column("id", UUID(as_uuid=True), primary_key = True, default=uuid.uuid4)
-    from_date = db.Column("from", db.String(50))
-    to_date = db.Column("to", db.String(50))  
-    room_id = db.Column("room_id", UUID(as_uuid=True), default=uuid.uuid4)
-
-#init class to map parameters to 
-def __init__(self, reservation_id, from_date, to_date, room_id):
-    self.reservation_id = reservation_id
-    self.from_date = from_date
-    self.to_date = to_date
-    self.room_id = room_id
-
-#create the database connector
-with app.app_context():
-    db.create_all()
-
-
 
 #Defining the Routes
 @app.route("/reservations/status/", methods=['GET'])
@@ -236,5 +217,9 @@ def reservations_byID(input_id: str):
     return method_response
 
 if __name__ == '__main__':
+    #import custom db scheme
+    from database import reservations
+    with app.app_context(): 
+        db.create_all()
     #define the localhost ip and the port that is going to be used
     app.run(host=os.getenv('HOST'), port=os.getenv('PORT'), debug=True)
