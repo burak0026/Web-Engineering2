@@ -81,10 +81,11 @@ def reservations_general():
         
     #GET Request
     if request.method == 'GET':
+        app.logger.info('GET Function called')
         #validate values
         if checkQueryValues(request.args.get('before'), request.args.get('after'), request.args.get('room_id')) is False:
-            app.logger.info('Reservation was created')
-            return Response("reservation created")
+            app.logger.info('invalid query values')
+            return Response("invalid query values")
         #make query, filter by parameters if present
         res_query = db.session.query(reservations)
         if request.args.get('room_id') is not None:
@@ -93,7 +94,9 @@ def reservations_general():
             res_query = res_query.filter(reservations.from_date < request.args.get('before'))
         if request.args.get('after') is not None:
             res_query = res_query.filter(reservations.to_date > request.args.get('after'))
+        app.logger.info('Filter added')
         res_query.all()
+        app.logger.info('Query done')
         #check if a reservation for the query is present
         if res_query is None:
             #create error response
@@ -101,6 +104,7 @@ def reservations_general():
             method_response = Response("reservation not found", status=404)
         else:
             #convert query data to json object
+            app.logger.error('Create Dictionary from result')
             data = []
             for entry in res_query:
                 new_data = {"id":str(entry.reservation_id),
@@ -110,6 +114,7 @@ def reservations_general():
                             }
                 data.append(new_data)
             query_result_json = json.dumps(data)
+            app.logger.error('dictionary converted to JSON')
             #create response with query values
             method_response = Response(query_result_json, status=200, mimetype='application/json')
 
@@ -118,6 +123,7 @@ def reservations_general():
         
 @app.route("/reservations/<input_id>/", methods=['GET', 'PUT', 'DELETE'])
 def reservations_byID(input_id: str): 
+    app.logger.info('By ID Function Calles')
     #validate id
     try:
         uuid.UUID(input_id)
@@ -125,21 +131,26 @@ def reservations_byID(input_id: str):
         app.logger.error('Invalid Id')
         return Response("invalid id", status=400)
     #make query for id
+    app.logger.info('Make Query')
     res_query = reservations.query.filter_by(reservation_id=input_id).first()
 
     #GET request
     if request.method == 'GET':
+        app.logger.info('GET Request called')
         if res_query is None:
             app.logger.error('Reservation not found')
             method_response = Response("reservation not found", status=404)
         else:
             #convert query data to json object
+            app.logger.info('Create Data Dictionary')
             data ={}
             data['id'] = str(res_query.reservation_id)
             data['from'] = str(res_query.from_date)
             data['to'] = str(res_query.to_date)
             data['room_id'] = str(res_query.room_id)
+            app.logger.info('Dictionary Created')
             query_result_json = json.dumps(data)
+            app.logger.info('Converted to JSON')
             #create response with query values
             method_response = Response(query_result_json, status=200, mimetype='application/json')
 
