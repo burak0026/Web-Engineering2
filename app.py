@@ -38,7 +38,7 @@ def reservations_general():
         else:
             auth_token = None
         #validate token
-        resp = validate_jwt(auth_token)
+        resp = validate_jwt(auth_token,app)
         if resp is not True:
             return resp
         #get Values from Message Body
@@ -111,6 +111,7 @@ def reservations_general():
                 data.append(new_data)
             query_result_json = json.dumps(data)
             #create response with query values
+            app.logger.info('Getting all reservations')
             method_response = Response(query_result_json, status=200, mimetype='application/json')
 
     return method_response
@@ -141,6 +142,7 @@ def reservations_byID(input_id: str):
             data['room_id'] = str(res_query.room_id)
             query_result_json = json.dumps(data)
             #create response with query values
+            app.logger.info('Reservation was found')
             method_response = Response(query_result_json, status=200, mimetype='application/json')
 
     #PUT request
@@ -183,7 +185,7 @@ def reservations_byID(input_id: str):
             else:
                 auth_token = None
             #validate token
-            resp = validate_jwt(auth_token)
+            resp = validate_jwt(auth_token,app)
             if resp is not True:
                 return resp
             #update existing entry
@@ -195,6 +197,7 @@ def reservations_byID(input_id: str):
                 res_query.room_id = content['room_id']
 
         #return response
+        app.logger.info('Reservation was created/updated')
         method_response = Response("reservation created/updated", status=204) 
         
     #DELETE request
@@ -205,7 +208,7 @@ def reservations_byID(input_id: str):
         else:
             auth_token = None
         #validate token
-        resp = validate_jwt(auth_token)
+        resp = validate_jwt(auth_token,app)
         if resp is not True:
             return resp
         #num_deleted = res_query.delete()
@@ -214,6 +217,7 @@ def reservations_byID(input_id: str):
             method_response = Response("reservation not found", status=404)
         else:
             db.session.delete(res_query)
+            app.logger.info("Reservation was deleted")
             method_response = Response("reservation deleted", status=204)
 
     #commit changes
