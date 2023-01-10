@@ -81,10 +81,9 @@ def reservations_general():
         
     #GET Request
     if request.method == 'GET':
-        app.logger.info('GET Function called')
         #validate values
         if checkQueryValues(request.args.get('before'), request.args.get('after'), request.args.get('room_id')) is False:
-            app.logger.info('invalid query values')
+            app.logger.error('invalid query values')
             return Response("invalid query values")
         #make query, filter by parameters if present
         res_query = db.session.query(reservations)
@@ -94,9 +93,7 @@ def reservations_general():
             res_query = res_query.filter(reservations.from_date < request.args.get('before'))
         if request.args.get('after') is not None:
             res_query = res_query.filter(reservations.to_date > request.args.get('after'))
-        app.logger.info('Filter added')
         res_query.all()
-        app.logger.info('Query done')
         #check if a reservation for the query is present
         if res_query is None:
             #create error response
@@ -104,7 +101,6 @@ def reservations_general():
             method_response = Response("reservation not found", status=404)
         else:
             #convert query data to json object
-            app.logger.error('Create Dictionary from result')
             data = []
             for entry in res_query:
                 new_data = {"id":str(entry.reservation_id),
@@ -114,7 +110,6 @@ def reservations_general():
                             }
                 data.append(new_data)
             query_result_json = json.dumps(data)
-            app.logger.error('dictionary converted to JSON')
             #create response with query values
             method_response = Response(query_result_json, status=200, mimetype='application/json')
 
@@ -123,7 +118,6 @@ def reservations_general():
         
 @app.route("/reservations/<input_id>/", methods=['GET', 'PUT', 'DELETE'])
 def reservations_byID(input_id: str): 
-    app.logger.info('By ID Function Calles')
     #validate id
     try:
         uuid.UUID(input_id)
@@ -131,46 +125,37 @@ def reservations_byID(input_id: str):
         app.logger.error('Invalid Id')
         return Response("invalid id", status=400)
     #make query for id
-    app.logger.info('Make Query')
     res_query = db.session.query(reservations).filter(reservations.reservation_id == input_id).first()
-    app.logger.info('Query done')
-
+    
     #GET request
     if request.method == 'GET':
-        app.logger.info('GET Request called')
         if res_query is None:
             app.logger.error('Reservation not found')
             method_response = Response("reservation not found", status=404)
         else:
             #convert query data to json object
-            app.logger.info('Create Data Dictionary')
             data ={}
             data['id'] = str(res_query.reservation_id)
             data['from'] = str(res_query.from_date)
             data['to'] = str(res_query.to_date)
             data['room_id'] = str(res_query.room_id)
-            app.logger.info('Dictionary Created')
             query_result_json = json.dumps(data)
-            app.logger.info('Converted to JSON')
             #create response with query values
             method_response = Response(query_result_json, status=200, mimetype='application/json')
 
     #PUT request
     elif request.method == 'PUT':
-        app.logger.info('PUT Request called')
         #get Values from Message Body
         content = request.json
         #validate JSON-Content values
         if checkJSONValues(content) is False:
-            app.logger.error('Invalid parameters in JSON')
+            app.logger.error('Invalid parameters in JSON Body')
             return Response("invalid parameters in JSON Body", status=405)
-        app.logger.info('Parameters are Valid')
         #check if room_id is valid
         req_url = "http://backend-assets:9000/assets/rooms/"+content['room_id']+"/"
         #don't know why response for invalid uuid`s is a connectionError instead of Code 404, so workaraound was implemented
         try:
             response = requests.get(req_url)
-            app.logger.info('room id is valid')
         except requests.exceptions.ConnectionError:
             app.logger.error('Invalid room_id')
             return Response("invalid room_id", status=422)
@@ -184,9 +169,8 @@ def reservations_byID(input_id: str):
             content_to = content_to.date()
             for entry in res_query_rooms:
                 if ((content_from <= entry.from_date and content_to >= entry.from_date) or (content_from <= entry.to_date and content_to >= entry.to_date) or (content_from >= entry.from_date and content_to <= entry.to_date)):
-                    app.logger.error('Conflicts with other Reservation')
-                    return Response("conflicts with other reservations on the same room", status=409)
-        app.logger.info('no conflict with other rooms')
+                    app.logger.error('conflict with other reservation on the same room')
+                    return Response("conflict with other reservation on the same room", status=409)
         if res_query is None:
             #insert new entry
             app.logger.info('add new entry')
@@ -203,14 +187,14 @@ def reservations_byID(input_id: str):
             if resp is not True:
                 return resp
             #update existing entry
-            app.logger.info('query and update existing reservation')
-            #reservations.query.filter_by(reservation_id=input_id).update(dict(from_date=content['from'], to_date = content['to'], room_id = content['room_id']))
-            res_query.from_date = content['from']
-            res_query.to_date = content['to']
-            res_query.room_id = content['room_id']
+            if content['from'] is not None:
+                res_query.from_date = content['from']
+            if content['to'] is not None:    
+                res_query.to_date = content['to']
+            if content['room_id'] is not None:
+                res_query.room_id = content['room_id']
 
         #return response
-        app.logger.info('Created/ Updated Reservation')
         method_response = Response("reservation created/updated", status=204) 
         
     #DELETE request
@@ -229,10 +213,7 @@ def reservations_byID(input_id: str):
             app.logger.error('Reservation was not found')
             method_response = Response("reservation not found", status=404)
         else:
-            app.logger.info('prepare delete')
             db.session.delete(res_query)
-            app.logger.info('deleted')
-            app.logger.info('Reservation was deleted')
             method_response = Response("reservation deleted", status=204)
 
     #commit changes
