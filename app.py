@@ -225,7 +225,7 @@ def reservations_byID(input_id: str):
         resp = validate_jwt(auth_token)
         if resp is not True:
             return resp
-        num_deleted = reservations.query.filter_by(reservation_id=input_id).delete()
+        num_deleted = res_query.delete()
         #check if object was deleted
         if num_deleted > 0 :
             app.logger.info('Reservation was deleted')
