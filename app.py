@@ -208,7 +208,6 @@ def reservations_byID(input_id: str):
             res_query.from_date = content['from']
             res_query.to_date = content['to']
             res_query.room_id = content['room_id']
-            db.session.commit()
 
         #return response
         app.logger.info('Created/ Updated Reservation')
@@ -225,7 +224,11 @@ def reservations_byID(input_id: str):
         resp = validate_jwt(auth_token)
         if resp is not True:
             return resp
-        num_deleted = res_query.delete()
+        #num_deleted = res_query.delete()
+        app.logger.info('prepare delete')
+        num_deleted = db.session.delete(res_query)
+        app.logger.info('deleted')
+        app.logger.info(num_deleted)
         #check if object was deleted
         if num_deleted > 0 :
             app.logger.info('Reservation was deleted')
