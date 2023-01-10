@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 import uuid
 import requests
-from flask import Response
+from flask import jsonify, Response
 from sqlalchemy.dialects.postgresql import UUID
 from app import app,db
 from validation import checkQueryValues,checkJSONValues
