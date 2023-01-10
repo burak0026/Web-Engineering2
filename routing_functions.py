@@ -4,15 +4,16 @@ import uuid
 import requests
 from flask import jsonify, Response
 from sqlalchemy.dialects.postgresql import UUID
-from app import App,reservations
+from app import app,db
 from validation import checkQueryValues,checkJSONValues
 from authorization import *
+from database import reservations
 
 
 class Routing_functions():
     
     def reservations_status():
-        App.app.logger.info('Get Statusinformation')
+        app.logger.info('Get Statusinformation')
         return {
             "authors": "Burak Oezkan, Marius Engelmeier",
             "apiVersion": "1.0"
@@ -32,7 +33,7 @@ class Routing_functions():
         content = request.json
         #validate JSON-Content values
         if checkJSONValues(content) is False:
-            App.app.logger.error('invalid JSON values')
+            app.logger.error('invalid JSON values')
             return Response("invalid values")
         #check if room_id is valid
         req_url = f"http://{os.getenv('ASSETS_API_HOST')}:{os.getenv('ASSETS_API_PORT')}/assets/rooms/"+content['room_id']+"/"
@@ -40,11 +41,11 @@ class Routing_functions():
         try:
             response = requests.get(req_url)
         except requests.exceptions.ConnectionError:
-            App.app.logger.error('invalid room_id')
+            app.logger.error('invalid room_id')
             return Response("invalid room_id", status=422)
         
         #ckeck for conflicts with other reservations
-        res_query = App.db.session.query(reservations).filter(reservations.room_id == content['room_id']).all()
+        res_query = db.session.query(reservations).filter(reservations.room_id == content['room_id']).all()
         if res_query is not None:
             content_from = datetime.datetime.strptime(content.get('from'), '%Y-%m-%d')
             content_from = content_from.date()
@@ -52,27 +53,27 @@ class Routing_functions():
             content_to = content_to.date()
             for entry in res_query:
                 if ((content_from <= entry.from_date and content_to >= entry.from_date) or (content_from <= entry.to_date and content_to >= entry.to_date) or (content_from >= entry.from_date and content_to <= entry.to_date)):
-                    App.app.logger.error('Conflict with other reservation')
+                    app.logger.error('Conflict with other reservation')
                     return Response("conflicts with other reservations on the same room", status=409)
                 
         #check if id key is present and add reservation
         if content.get('id') is not None:
-            App.db.session.add(reservations(reservation_id = content['id'], from_date = content['from'], to_date = content['to'], room_id = content['room_id']))
+            db.session.add(reservations(reservation_id = content['id'], from_date = content['from'], to_date = content['to'], room_id = content['room_id']))
         else:
-            App.db.session.add(reservations(from_date = content['from'], to_date = content['to'], room_id = content['room_id']))
+            db.session.add(reservations(from_date = content['from'], to_date = content['to'], room_id = content['room_id']))
         #commit
-        App.db.session.commit()
+        db.session.commit()
         #create response
-        App.app.logger.info('Reservation was created')
+        app.logger.info('Reservation was created')
         return Response("reservation created", status=201)
 
     def get_reservations(request):
         #validate values
         if checkQueryValues(request.args.get('before'), request.args.get('after'), request.args.get('room_id')) is False:
-            App.app.logger.info('Reservation was created')
+            app.logger.info('Reservation was created')
             return Response("reservation created")
         #make query, filter by parameters if present
-        res_query = App.db.session.query(reservations)
+        res_query = db.session.query(reservations)
         if request.args.get('room_id') is not None:
             res_query = res_query.filter(reservations.room_id == request.args.get('room_id'))  
         if request.args.get('before') is not None:
@@ -83,7 +84,7 @@ class Routing_functions():
         #check if a reservation for the query is present
         if res_query is None:
             #create error response
-            App.app.logger.error('Reservation was not found')
+            app.logger.error('Reservation was not found')
             return Response("reservation not found", status=404)
         else:
             #convert query data to json object
@@ -104,13 +105,13 @@ class Routing_functions():
         try:
             uuid.UUID(input_id)
         except ValueError:
-            App.app.logger.error('Invalid Id')
+            app.logger.error('Invalid Id')
             return Response("invalid id", status=400)
         #make query for id
         res_query = reservations.query.filter_by(reservation_id=input_id).first()
         
         if res_query is None:
-            App.app.logger.error('Reservation not found')
+            app.logger.error('Reservation not found')
             return Response("reservation not found", status=404)
         else:
             #convert query data to json object
@@ -120,7 +121,7 @@ class Routing_functions():
             data['to'] = str(res_query.to_date)
             data['room_id'] = str(res_query.room_id)
             query_result_json = json.dumps(data)
-            App.db.session.commit()
+            db.session.commit()
             #create response with query values
             return Response(query_result_json, status=200, mimetype='application/json')
         
@@ -129,7 +130,7 @@ class Routing_functions():
         try:
             uuid.UUID(input_id)
         except ValueError:
-            App.app.logger.error('Invalid Id')
+            app.logger.error('Invalid Id')
             return Response("invalid id", status=400)
         #make query for id
         res_query = reservations.query.filter_by(reservation_id=input_id).first()
@@ -137,7 +138,7 @@ class Routing_functions():
         content = request.json
         #validate JSON-Content values
         if checkJSONValues(content) is False:
-            App.app.logger.error('Invalid parameters in JSON')
+            app.logger.error('Invalid parameters in JSON')
             return Response("invalid parameters in JSON Body", status=405)
         #check if room_id is valid
         req_url = "http://backend-assets:9000/assets/rooms/"+content['room_id']+"/"
@@ -145,11 +146,11 @@ class Routing_functions():
         try:
             response = requests.get(req_url)
         except requests.exceptions.ConnectionError:
-            App.app.logger.error('Invalid room_id')
+            app.logger.error('Invalid room_id')
             return Response("invalid room_id", status=422)
         
         #ckeck for conflicts with other reservations
-        res_query_rooms = App.db.session.query(reservations).filter(reservations.room_id == content['room_id']).all()
+        res_query_rooms = db.session.query(reservations).filter(reservations.room_id == content['room_id']).all()
         if res_query_rooms is not None:
             content_from = datetime.datetime.strptime(content.get('from'), '%Y-%m-%d')
             content_from = content_from.date()
@@ -157,12 +158,12 @@ class Routing_functions():
             content_to = content_to.date()
             for entry in res_query_rooms:
                 if ((content_from <= entry.from_date and content_to >= entry.from_date) or (content_from <= entry.to_date and content_to >= entry.to_date) or (content_from >= entry.from_date and content_to <= entry.to_date)):
-                    App.app.logger.error('Conflicts with other Reservation')
+                    app.logger.error('Conflicts with other Reservation')
                     return Response("conflicts with other reservations on the same room", status=409)
         
         if res_query is None:
             #insert new entry
-            App.db.session.add(reservations(reservation_id = input_id, from_date = content['from'], to_date = content['to'], room_id = content['room_id']))     
+            db.session.add(reservations(reservation_id = input_id, from_date = content['from'], to_date = content['to'], room_id = content['room_id']))     
         else:
             auth_header = request.headers.get('Authorization')
             if auth_header:
@@ -176,8 +177,8 @@ class Routing_functions():
             #update existing entry
             reservations.query.filter_by(reservation_id=input_id).update(dict(from_date=content['from'], to_date = content['to'], room_id = content['room_id']))
         #return response
-        App.app.logger.info('Created/ Updated Reservation')
-        App.db.session.commit()
+        app.logger.info('Created/ Updated Reservation')
+        db.session.commit()
         return Response("reservation created/updated", status=204)
     
     def delete_reservation_by_id(input_id: str,request):
@@ -185,7 +186,7 @@ class Routing_functions():
         try:
             uuid.UUID(input_id)
         except ValueError:
-            App.app.logger.error('Invalid Id')
+            app.logger.error('Invalid Id')
             return Response("invalid id", status=400)
         #make query for id
         res_query = reservations.query.filter_by(reservation_id=input_id).first()
@@ -201,10 +202,10 @@ class Routing_functions():
         num_deleted = reservations.query.filter_by(reservation_id=input_id).delete()
         #check if object was deleted
         if num_deleted > 0 :
-            App.app.logger.info('Reservation was deleted')
-            App.db.session.commit()
+            app.logger.info('Reservation was deleted')
+            db.session.commit()
             return Response("reservation deleted", status=204) 
         else:
-            App.app.logger.error('Reservation was not found')
-            App.db.session.commit()
+            app.logger.error('Reservation was not found')
+            db.session.commit()
             return Response("reservation not found", status=404)
