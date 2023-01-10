@@ -148,8 +148,9 @@ def reservations_byID(input_id: str):
         else:
             #convert query data to json object
             app.logger.info('Create Data Dictionary')
+            app.logger.info(res_query)
             data ={}
-            data['id'] = str(res_query.reservation_id)
+            #data['id'] = str(res_query.reservation_id)
             data['from'] = str(res_query.from_date)
             data['to'] = str(res_query.to_date)
             data['room_id'] = str(res_query.room_id)
