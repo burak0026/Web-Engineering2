@@ -133,9 +133,10 @@ def reservations_byID(input_id: str):
     #make query for id
     app.logger.info('Make Query')
     #res_query = reservations.query.filter_by(reservation_id=input_id).first()
-    res_query = db.session.query(reservations)
-    res_query = res_query.filter(reservations.reservation_id == input_id)
-    res_query.first()
+    #res_query = db.session.query(reservations)
+    #res_query = res_query.filter(reservations.reservation_id == input_id)
+    #res_query.first()
+    res_query = db.session.query(reservations).filter(reservations.reservation_id == input_id).all()
     app.logger.info('Query done')
 
     #GET request
