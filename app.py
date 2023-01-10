@@ -6,7 +6,7 @@ import requests
 from flask import Flask, jsonify, request, Response, make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import UUID
-from routing_functions import *
+from routing_functions import Routing_functions
 from authorization import *
 from validation import *
 
