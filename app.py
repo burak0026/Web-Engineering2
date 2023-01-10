@@ -204,7 +204,12 @@ def reservations_byID(input_id: str):
                 return resp
             #update existing entry
             app.logger.info('query and update existing reservation')
-            reservations.query.filter_by(reservation_id=input_id).update(dict(from_date=content['from'], to_date = content['to'], room_id = content['room_id']))
+            #reservations.query.filter_by(reservation_id=input_id).update(dict(from_date=content['from'], to_date = content['to'], room_id = content['room_id']))
+            res_query.from_date = content['from']
+            res_query.to_date = content['to']
+            res_query.room_id = content['room_id']
+            db.session.commit()
+
         #return response
         app.logger.info('Created/ Updated Reservation')
         method_response = Response("reservation created/updated", status=204) 
