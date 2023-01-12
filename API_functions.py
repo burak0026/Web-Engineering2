@@ -16,12 +16,8 @@ class API_functions:
             "authors": "Burak Oezkan, Marius Engelmeier",
             "apiVersion": "1.0"
             }
-        response = Flask_API.app.response_class(
-        response=json.dumps(ret_data),
-        status=200,
-        mimetype='application/json'
-        )
-        return response
+        return Response(json.dumps(ret_data), status=200, mimetype='application/json')
+        
         
         
         
