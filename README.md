@@ -36,3 +36,9 @@
 
 ## Testing
 
+The Programm `test.py` runs a unittest, which checks the statuscode of the Endpoint "/reservations/status/".
+We failed to integrate this test into our CI/CD , and it is not running automatically
+
+## HOW TO
+When the backend is locally running the api is available under http://localhost/api/reservations/
+Applications like Swager UI make it possible to interact with the api, which is callable under http://localhost/apidocs
