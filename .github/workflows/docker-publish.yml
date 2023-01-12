@@ -80,3 +80,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run unit test
+        run: python -m unittest test.py
