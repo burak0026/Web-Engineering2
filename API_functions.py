@@ -12,10 +12,10 @@ class API_functions:
     def reservations_status():
         
         Flask_API.app.logger.info('Get Statusinformation')
-        return {
+        return Response({
             "authors": "Burak Oezkan, Marius Engelmeier",
             "apiVersion": "1.0"
-            }
+            },status=200)
     
     def post_reservations(request):
         # get auth token from header
