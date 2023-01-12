@@ -60,7 +60,7 @@ def checkQueryValues(before, after, room_id,app):
     #if no error, return true
     return True
 
-def validate_id(self,input_id):
+def validate_id(input_id):
     try:
         uuid.UUID(input_id)
         return True
