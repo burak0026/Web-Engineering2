@@ -44,7 +44,7 @@ def reservations_general():
         #get Values from Message Body
         content = request.json
         #validate JSON-Content values
-        if checkJSONValues(content) is False:
+        if checkJSONValues(content,app) is False:
             app.logger.error('invalid JSON values')
             return Response("invalid values")
         #check if room_id is valid
@@ -82,7 +82,7 @@ def reservations_general():
     #GET Request
     if request.method == 'GET':
         #validate values
-        if checkQueryValues(request.args.get('before'), request.args.get('after'), request.args.get('room_id')) is False:
+        if checkQueryValues(request.args.get('before'), request.args.get('after'), request.args.get('room_id'),app) is False:
             app.logger.error('invalid query values')
             return Response("invalid query values")
         #make query, filter by parameters if present
@@ -150,7 +150,7 @@ def reservations_byID(input_id: str):
         #get Values from Message Body
         content = request.json
         #validate JSON-Content values
-        if checkJSONValues(content) is False:
+        if checkJSONValues(content,app) is False:
             app.logger.error('Invalid parameters in JSON Body')
             return Response("invalid parameters in JSON Body", status=405)
         #check if room_id is valid
