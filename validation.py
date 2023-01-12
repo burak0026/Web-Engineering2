@@ -59,3 +59,11 @@ def checkQueryValues(before, after, room_id,app):
             return False
     #if no error, return true
     return True
+
+def validate_id(self,input_id):
+    try:
+        uuid.UUID(input_id)
+        return True
+    except ValueError:
+        return False
+    
