@@ -12,10 +12,19 @@ class API_functions:
     def reservations_status():
         
         Flask_API.app.logger.info('Get Statusinformation')
-        return Response({
+        ret_data = {
             "authors": "Burak Oezkan, Marius Engelmeier",
             "apiVersion": "1.0"
-            },status=200,mimetype='application/json')
+            }
+        response = Flask_API.app.response_class(
+        response=json.dumps(ret_data),
+        status=200,
+        mimetype='application/json'
+        )
+        return response
+        
+        
+        
     
     def post_reservations(request):
         # get auth token from header
