@@ -13,18 +13,26 @@
 
 | Variable | Description                |
 | :-------- | :------------------------- |
-| `KEYCLOAK_HOST` | Used for validation, default = traefik |
-| `KEYCLOAK_REALM` | Used for validation, default = biletado |
-| `POSTGRES_PERSONAL_USER` | User for postgres db |
-| `POSTGRES_PERSONAL_PASSWORD` | Password (goes with user) for postgres db |
-| `POSTGRES_PERSONAL_DBNAME` | Name of database |
-| `POSTGRES_PERSONAL_HOST` | Hostaddress of database |
-| `POSTGRES_PERSONAL_PORT` | Port (goes with hostaddress) of database |
+| `POSTGRES_PERSONAL_USER` | postgres db User |
+| `POSTGRES_PERSONAL_PASSWORD` | db Password (same as user)|
+| `KEYCLOAK_HOST` | for validation-Use (default = traefik) |
+| `KEYCLOAK_REALM` | for validation-Use (default = biletado) |
+| `POSTGRES_PERSONAL_DBNAME` | database name |
+| `POSTGRES_PERSONAL_HOST` | Host of database |
+| `POSTGRES_PERSONAL_PORT` | Port (same as Host) of database |
+| `BACKEND_RESERVATIONS_IMAGE_REPOSITORY` | Image of this repository|
+| `BACKEND_RESERVATIONS_IMAGE_VERSION` | Version of Image |
 
 
 ## Programs
-
-
+| Programs | Description                |
+| :-------- | :------------------------- |
+| `app.py` | Creates the FLASK API in a Class and implements Configuration (App, Db and Logging) |
+| `API_functions.py` | Implements API_functions class, which defines every function for the possible endpoints with the corresponding method [GET,PUT,POST,DELETE]|
+| `routes.py` | This program contain the routes for the API and is the Main program for this project (runs the application) |
+| `database.py` | Creates a model class with database scheme (reservations)|
+| `authorization.py` | Handles the authorization for some methods , checks the validation of JWT |
+| `validation.py` | Validates different Parameter values e.g JSON, Query and checks validation of inputs in the URL|
 
 ## Testing
 
