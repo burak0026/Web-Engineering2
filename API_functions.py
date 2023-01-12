@@ -15,7 +15,7 @@ class API_functions:
         return Response({
             "authors": "Burak Oezkan, Marius Engelmeier",
             "apiVersion": "1.0"
-            },status=200)
+            },status=200,mimetype='application/json')
     
     def post_reservations(request):
         # get auth token from header
