@@ -34,7 +34,7 @@ def checkJSONValues(content,app):
     #if no error, return true
     return True
 
-#function to check JSON parameters
+#function to check Query parameters
 def checkQueryValues(before, after, room_id,app):
     #validate before
     if before is not None:
