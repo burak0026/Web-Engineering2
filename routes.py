@@ -32,9 +32,5 @@ def reservation_by_id(input_id: str):
         return API_functions.delete_reservation_by_id(input_id,request)
     
 if __name__ == '__main__':
-    #import custom db scheme
-    # from database import reservations
-    # with app.app_context(): 
-    #     db.create_all()
     #define the localhost ip and the port that is going to be used
     app.run(host=os.getenv('HOST'), port=os.getenv('PORT'), debug=True)

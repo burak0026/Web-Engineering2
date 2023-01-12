@@ -38,7 +38,8 @@ class API_functions:
         #validate JSON-Content values
         if checkJSONValues(content,Flask_API.app) is False:
             Flask_API.app.logger.error('invalid JSON values')
-            return Response("invalid values")
+            ret_data = {"message": "invalid values"}
+            return Response(json.dumps(ret_data), mimetype='application/json')
         #check if room_id is valid
         req_url = f"http://{os.getenv('ASSETS_API_HOST')}:{os.getenv('ASSETS_API_PORT')}/assets/rooms/"+content['room_id']+"/"
         #don't know why response for invalid uuid`s is a connectionError instead of Code 404, so workaraound was implemented
@@ -46,7 +47,8 @@ class API_functions:
             response = requests.get(req_url)
         except requests.exceptions.ConnectionError:
             Flask_API.app.logger.error('invalid room_id')
-            return Response("invalid room_id", status=422)
+            ret_data = {"message": "invalid room_id"}
+            return Response(json.dumps(ret_data), status=422, mimetype='application/json')
         
         #ckeck for conflicts with other reservations
         res_query = Flask_API.db.session.query(reservations).filter(reservations.room_id == content['room_id']).all()

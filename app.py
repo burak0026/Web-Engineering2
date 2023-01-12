@@ -2,6 +2,7 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import logging
+
 # create flask api class and configure
 class Flask_API:
     app = Flask(__name__)
